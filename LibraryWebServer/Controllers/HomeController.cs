@@ -88,23 +88,24 @@ namespace LibraryWebServer.Controllers {
 					on t.Isbn equals i.Isbn
 					into tJoinI
 
-					from p in db.Patrons
-					join c in db.CheckedOut
-					on p.CardNum equals c.CardNum
-					into pJoinC
-					
 					from j in tJoinI.DefaultIfEmpty()
-					join j2 in pJoinC.DefaultIfEmpty()
-					on j.Serial equals j2.Serial
-					into tJoinC
+					join c in db.CheckedOut
+					on j.Serial equals c.Serial
+					into jJoinC
+
+					from j2 in jJoinC.DefaultIfEmpty()
+					join p in db.Patrons
+					on j2.CardNum equals p.CardNum
+					into jJoinP
+					
+					from j3 in jJoinP.DefaultIfEmpty()
 
 					select new {
 						isbn = t.Isbn,
 						title = t.Title,
 						author = t.Author,
-						serial = j==null? null : (uint?) j.Serial,
-						name = j == null ? "" : 
-							( )
+						serial = j == null ? null : (uint?)j.Serial,
+						name = j == null ? "" : j3.Name
 					};
 
 			return Json(query.ToArray());

@@ -9,12 +9,25 @@ using LibraryWebServer.Models;
 
 namespace LibraryWebServer.Controllers {
 	public class HomeController : Controller {
+
+		Team41LibraryContext db = new Team41LibraryContext();
 		// WARNING:
 		// This very simple web server is designed to be as tiny and simple as possible
 		// This is NOT the way to save user data.
 		// This will only allow one user of the web server at a time (aside from major security concerns).
 		private static string user = "";
 		private static int card = -1;
+
+		public void UseContext(Team41LibraryContext newdb) {
+			db = newdb;
+		}
+
+		protected override void Dispose(bool disposing) {
+			if (disposing) {
+				db.Dispose();
+			}
+			base.Dispose(disposing);
+		}
 
 		/// <summary>
 		/// Given a Patron name and CardNum, verify that they exist and match in the database.
@@ -29,14 +42,11 @@ namespace LibraryWebServer.Controllers {
 		public IActionResult CheckLogin(string name, int cardnum) {
 			bool loginSuccessful = false;
 
-			using (Team41LibraryContext db = new Team41LibraryContext()) {
-				var query = from p in db.Patrons
-							where p.Name == name && p.CardNum == cardnum
-							select p;
-				loginSuccessful = query.Any();
+			var query = from p in db.Patrons
+						where p.Name == name && p.CardNum == cardnum
+						select p;
+			loginSuccessful = query.Any();
 
-			}
-				
 
 			if (!loginSuccessful) {
 				return Json(new { success = false });
@@ -72,9 +82,32 @@ namespace LibraryWebServer.Controllers {
 		[HttpPost]
 		public ActionResult AllTitles() {
 
-			// TODO: Implement
+			var query = 
+					from t in db.Titles 
+					join i in db.Inventory
+					on t.Isbn equals i.Isbn
+					into tJoinI
 
-			return Json(null);
+					from p in db.Patrons
+					join c in db.CheckedOut
+					on p.CardNum equals c.CardNum
+					into pJoinC
+					
+					from j in tJoinI.DefaultIfEmpty()
+					join j2 in pJoinC.DefaultIfEmpty()
+					on j.Serial equals j2.Serial
+					into tJoinC
+
+					select new {
+						isbn = t.Isbn,
+						title = t.Title,
+						author = t.Author,
+						serial = j==null? null : (uint?) j.Serial,
+						name = j == null ? "" : 
+							( )
+					};
+
+			return Json(query.ToArray());
 
 		}
 

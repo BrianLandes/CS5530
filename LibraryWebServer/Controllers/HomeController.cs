@@ -105,9 +105,8 @@ namespace LibraryWebServer.Controllers {
 						title = t.Title,
 						author = t.Author,
 						serial = j == null ? null : (uint?)j.Serial,
-						name = j == null ? "" : j3.Name
+						name = (j2 == null) ? "" : j3.Name
 					};
-
 			return Json(query.ToArray());
 
 		}

@@ -122,8 +122,33 @@ namespace LibraryWebServer.Controllers {
 		/// <returns>The JSON representation of the books</returns>
 		[HttpPost]
 		public ActionResult ListMyBooks() {
-			// TODO: Implement
-			return Json(null);
+			var query =
+				from t in db.Titles
+				join i in db.Inventory
+				on t.Isbn equals i.Isbn
+				into tJoinI
+
+				from j in tJoinI.DefaultIfEmpty()
+				join c in db.CheckedOut
+				on j.Serial equals c.Serial
+				into jJoinC
+
+				from j2 in jJoinC.DefaultIfEmpty()
+				join p in db.Patrons
+				on j2.CardNum equals p.CardNum
+				into jJoinP
+
+				from j3 in jJoinP.DefaultIfEmpty()
+				where j3.Name == user
+
+				select new {
+					title = t.Title,
+					author = t.Author,
+					serial = (uint?)j.Serial,
+				};
+			
+
+			return Json(query.ToArray());
 		}
 
 

@@ -105,7 +105,7 @@ namespace LibraryWebServer.Controllers {
 						title = t.Title,
 						author = t.Author,
 						serial = j == null ? null : (uint?)j.Serial,
-						name = j == null ? "" : j3.Name
+						name = j == null || j3==null ? "" : j3.Name
 					};
 
 			return Json(query.ToArray());
@@ -139,7 +139,7 @@ namespace LibraryWebServer.Controllers {
 				into jJoinP
 
 				from j3 in jJoinP.DefaultIfEmpty()
-				where j3.Name == user
+				where j3.CardNum == card
 
 				select new {
 					title = t.Title,
@@ -163,7 +163,13 @@ namespace LibraryWebServer.Controllers {
 		[HttpPost]
 		public ActionResult CheckOutBook(int serial) {
 			// You may have to cast serial to a (uint)
+			CheckedOut newEntry = new CheckedOut() {
+				Serial = (uint)serial,
+				CardNum = (uint)card
+			};
 
+			db.CheckedOut.Add(newEntry);
+			db.SaveChanges();
 
 			return Json(new { success = true });
 		}
@@ -179,6 +185,16 @@ namespace LibraryWebServer.Controllers {
 		[HttpPost]
 		public ActionResult ReturnBook(int serial) {
 			// You may have to cast serial to a (uint)
+			var query = from c in db.CheckedOut
+						where c.CardNum == card
+						&& c.Serial == serial
+						select c;
+
+			var entry = query.FirstOrDefault();
+			if ( entry!=null ) {
+				db.CheckedOut.Remove(entry);
+				db.SaveChanges();
+			}
 
 			return Json(new { success = true });
 		}
